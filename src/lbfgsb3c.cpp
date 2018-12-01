@@ -5,6 +5,7 @@
 #include <Rmath.h>
 #include <Rcpp.h>
 #define max2( a , b )  ( (a) > (b) ? (a) : (b) )
+
 using namespace Rcpp;
 
 extern "C" void setulb_(int *n, int *m, double *x, double *l, double *u,
@@ -41,39 +42,104 @@ extern "C" void lbfgsb3C_(int n, int lmm, double *x, double *lower,
   fncount[0]=0;
   grcount[0]=0;
   int itask2=0;
+  CharacterVector taskList(28);
+  taskList[0]="NEW_X";
+  taskList[1]="START";
+  taskList[2]="STOP";
+  taskList[3]="FG";//,  // 1-4
+  taskList[4]="ABNORMAL_TERMINATION_IN_LNSRCH";
+  taskList[5]="CONVERGENCE"; //5-6
+  taskList[6]="CONVERGENCE: NORM_OF_PROJECTED_GRADIENT_<=_PGTOL";//7
+  taskList[7]="CONVERGENCE: REL_REDUCTION_OF_F_<=_FACTR*EPSMCH";//8
+  taskList[8]="ERROR: FTOL .LT. ZERO"; //9
+  taskList[9]="ERROR: GTOL .LT. ZERO";//10
+  taskList[10]="ERROR: INITIAL G .GE. ZERO"; //11
+  taskList[11]="ERROR: INVALID NBD"; // 12
+  taskList[12]="ERROR: N .LE. 0"; // 13
+  taskList[13]="ERROR: NO FEASIBLE SOLUTION"; // 14
+  taskList[14]="ERROR: STP .GT. STPMAX"; // 15
+  taskList[15]="ERROR: STP .LT. STPMIN"; // 16
+  taskList[16]="ERROR: STPMAX .LT. STPMIN"; // 17
+  taskList[17]="ERROR: STPMIN .LT. ZERO"; // 18
+  taskList[18]="ERROR: XTOL .LT. ZERO"; // 19
+  taskList[19]="FG_LNSRCH"; // 20
+  taskList[20]="FG_START"; // 21
+  taskList[21]="RESTART_FROM_LNSRCH"; // 22
+  taskList[22]="WARNING: ROUNDING ERRORS PREVENT PROGRESS"; // 23
+  taskList[23]="WARNING: STP .eq. STPMAX"; // 24
+  taskList[24]="WARNING: STP .eq. STPMIN"; // 25
+  taskList[25]="WARNING: XTOL TEST SATISFIED"; //
+  taskList[26] = "CONVERGENCE: Parameters differences below xtol";
+  taskList[27] = "Maximum number of iterations reached";
   while (true){
+    if (trace >= 2){
+      Rprintf("\n================================================================================\nBefore call f=%f task number %d, or \"%s\"\n", *Fmin, itask, (as<std::string>(taskList[itask-1])).c_str());
+    }
+    if (itask==3) doExit=1;
     setulb_(&n, &lmm, x, lower, upper, nbd, Fmin, g, &factr, &pgtol,
 	  wa, iwa, &itask, &iprint, &icsave, lsave, isave, dsave);
+    if (trace > 2) {
+      Rprintf("returned from lbfgsb3 \n");
+      Rprintf("returned itask is %d or \"%s\"\n",itask,(as<std::string>(taskList[itask-1])).c_str());
+    }
     switch (itask){
     case 4:
     case 20:
     case 21:
+      if (trace >= 2) {
+	Rprintf("computing f and g at prm=\n");
+	NumericVector xv(n);
+	std::copy(&x[0],&x[0]+n,&xv[0]);
+	print(xv);
+      }
       // Calculate f and g
       Fmin[0] = fn(n, x, ex);
       fncount[0]++;
       gr(n, x, g, ex);
       grcount[0]++;
+      if (trace > 0) {
+	Rprintf("At iteration %d f=%f ", isave[33], *Fmin);
+	if (trace > 1) {
+	  double tmp = fabs(g[n-1]);
+	  for (unsigned int j=n-1; j--;){
+	    if (tmp > fabs(g[j])){
+	      tmp = fabs(g[j]);
+	    }
+	  }
+	  Rprintf("max(abs(g))=%f",tmp);
+	}
+	Rprintf("\n");
+      }
       break;
     case 1:
       // New x;
       if (maxit <= fncount[0]){
-	itask2=28;
-	itask=3; // Stop -- gives the right results and restores gradients
+      	itask2=28;
+	doExit=1;
+      	itask=3; // Stop -- gives the right results and restores gradients
+	if (trace > 2){
+	  Rprintf("Exit becuase maximum number of function calls %d met.\n", maxit);
+	}
       } else {
-	bool converge=fabs(lastx[n-1]-x[n-1]) < fabs(x[n-1])*rtol+atol;
-	if (converge){
-	  for (i=n-1;i--;){
-	    converge=fabs(lastx[i]-x[i]) < fabs(x[i])*rtol+atol;
-	    if  (!converge){
-	      break;
-	    }
+      	bool converge=fabs(lastx[n-1]-x[n-1]) < fabs(x[n-1])*rtol+atol;
+      	if (converge){
+      	  for (i=n-1;i--;){
+      	    converge=fabs(lastx[i]-x[i]) < fabs(x[i])*rtol+atol;
+      	    if  (!converge){
+      	      break;
+      	    }
+      	  }
+      	}
+      	if (converge){
+      	  itask2=27;
+      	  itask=3; // Stop -- gives the right results and restores gradients
+	  if (trace > 2){
+	    Rprintf("CONVERGENCE: Parameters differences below xtol.\n", maxit);
 	  }
-	}
-	if (converge){
-	  itask2=27;
-	  itask=3; // Stop -- gives the right results and restores gradients
-	}
+	  doExit=1;
+      	}
       }
+      std::copy(&x[0],&x[0]+n,&lastx[0]);
       break;
     default:
       doExit=1;
@@ -122,36 +188,7 @@ Rcpp::List lbfgsb3cpp(NumericVector par, Function fn, Function gr, NumericVector
   ev["gr"] = gr;
   ev["pn"] = par.attr("names");
   Rcpp::NumericVector g(par.size());
-  CharacterVector taskList(28);
-  taskList[0]="NEW_X";
-  taskList[1]="START";
-  taskList[2]="STOP";
-  taskList[3]="FG";//,  // 1-4
-  taskList[4]="ABNORMAL_TERMINATION_IN_LNSRCH";
-  taskList[5]="CONVERGENCE"; //5-6
-  taskList[6]="CONVERGENCE: NORM_OF_PROJECTED_GRADIENT_<=_PGTOL";//7
-  taskList[7]="CONVERGENCE: REL_REDUCTION_OF_F_<=_FACTR*EPSMCH";//8
-  taskList[8]="ERROR: FTOL .LT. ZERO"; //9
-  taskList[9]="ERROR: GTOL .LT. ZERO";//10
-  taskList[10]="ERROR: INITIAL G .GE. ZERO"; //11
-  taskList[11]="ERROR: INVALID NBD"; // 12
-  taskList[12]="ERROR: N .LE. 0"; // 13
-  taskList[13]="ERROR: NO FEASIBLE SOLUTION"; // 14
-  taskList[14]="ERROR: STP .GT. STPMAX"; // 15
-  taskList[15]="ERROR: STP .LT. STPMIN"; // 16
-  taskList[16]="ERROR: STPMAX .LT. STPMIN"; // 17
-  taskList[17]="ERROR: STPMIN .LT. ZERO"; // 18
-  taskList[18]="ERROR: XTOL .LT. ZERO"; // 19
-  taskList[19]="FG_LNSRCH"; // 20
-  taskList[20]="FG_START"; // 21
-  taskList[21]="RESTART_FROM_LNSRCH"; // 22
-  taskList[22]="WARNING: ROUNDING ERRORS PREVENT PROGRESS"; // 23
-  taskList[23]="WARNING: STP .eq. STPMAX"; // 24
-  taskList[24]="WARNING: STP .eq. STPMIN"; // 25
-  taskList[25]="WARNING: XTOL TEST SATISFIED"; //
-  taskList[26] = "CONVERGENCE: Parameters differences below xtol";
-  taskList[27] = "Maximum number of iterations reached";
-  // CONV in 6, 7, 8; ERROR in 9-19; WARN in 23-26
+    // CONV in 6, 7, 8; ERROR in 9-19; WARN in 23-26
   int trace = as<int>(ctrl["trace"]);
   double factr = as<double>(ctrl["factr"]);
   double pgtol = as<double>(ctrl["pgtol"]);
@@ -244,6 +281,36 @@ Rcpp::List lbfgsb3cpp(NumericVector par, Function fn, Function gr, NumericVector
     ret["convergence"] = 52;
     break;
   }
+  CharacterVector taskList(28);
+  taskList[0]="NEW_X";
+  taskList[1]="START";
+  taskList[2]="STOP";
+  taskList[3]="FG";//,  // 1-4
+  taskList[4]="ABNORMAL_TERMINATION_IN_LNSRCH";
+  taskList[5]="CONVERGENCE"; //5-6
+  taskList[6]="CONVERGENCE: NORM_OF_PROJECTED_GRADIENT_<=_PGTOL";//7
+  taskList[7]="CONVERGENCE: REL_REDUCTION_OF_F_<=_FACTR*EPSMCH";//8
+  taskList[8]="ERROR: FTOL .LT. ZERO"; //9
+  taskList[9]="ERROR: GTOL .LT. ZERO";//10
+  taskList[10]="ERROR: INITIAL G .GE. ZERO"; //11
+  taskList[11]="ERROR: INVALID NBD"; // 12
+  taskList[12]="ERROR: N .LE. 0"; // 13
+  taskList[13]="ERROR: NO FEASIBLE SOLUTION"; // 14
+  taskList[14]="ERROR: STP .GT. STPMAX"; // 15
+  taskList[15]="ERROR: STP .LT. STPMIN"; // 16
+  taskList[16]="ERROR: STPMAX .LT. STPMIN"; // 17
+  taskList[17]="ERROR: STPMIN .LT. ZERO"; // 18
+  taskList[18]="ERROR: XTOL .LT. ZERO"; // 19
+  taskList[19]="FG_LNSRCH"; // 20
+  taskList[20]="FG_START"; // 21
+  taskList[21]="RESTART_FROM_LNSRCH"; // 22
+  taskList[22]="WARNING: ROUNDING ERRORS PREVENT PROGRESS"; // 23
+  taskList[23]="WARNING: STP .eq. STPMAX"; // 24
+  taskList[24]="WARNING: STP .eq. STPMIN"; // 25
+  taskList[25]="WARNING: XTOL TEST SATISFIED"; //
+  taskList[26] = "CONVERGENCE: Parameters differences below xtol";
+  taskList[27] = "Maximum number of iterations reached";      
+
   ret["message"]= CharacterVector::create(taskList[fail-1]);
   delete [] x;
   delete [] low;
