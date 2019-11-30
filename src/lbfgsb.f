@@ -47,16 +47,16 @@ c=============================================================================
 c JN 20150118 change name setulb to lbfgsb3
 c MLF 20180818 changed name back lbfgsb3 in c wrapper
       subroutine setulb(n, m, x, l, u, nbd, f, g, factr, pgtol, wa, 
-     +                iwa, itask, iprint, icsave, lsave, isave, dsave)
-c Berend noted earlier format beyond column 72 
-      logical          lsave(4)
+     +                iwa, itask, iprint, icsave, lsavei, isave, dsave)
+c     Berend noted earlier format beyond column 72
+      integer          lsavei(4)
       integer          n, m, iprint, itask, icsave,
      +                 nbd(n), iwa(3*n), isave(44)
       double precision f, factr, pgtol, x(n), l(n), u(n), g(n),
 c
 c-jlm-jn
      +                 wa(2*m*n + 5*n + 11*m*m + 8*m), dsave(29)
- 
+      logical lsave(4)
 c     ************
 c
 c     Subroutine setulb
@@ -238,7 +238,30 @@ c
 c     ************
 c-jlm-jn 
       integer   lws,lr,lz,lt,ld,lxp,lwa,
-     +          lwy,lsy,lss,lwt,lwn,lsnd
+     +     lwy,lsy,lss,lwt,lwn,lsnd
+
+      if (lsavei(1) .eq. 1) then
+         lsave(1) = .true.
+      else
+         lsave(1) = .false.
+      endif
+      if (lsavei(2) .eq. 1) then
+         lsave(2) = .true.
+      else
+         lsave(2) = .false.
+      endif
+      
+      if (lsavei(3) .eq. 1) then
+         lsave(3) = .true.
+      else
+         lsave(3) = .false.
+      endif
+      
+      if (lsavei(4) .eq. 1) then
+         lsave(4) = .true.
+      else
+         lsave(4) = .false.
+      endif      
 
 cj      integer ia(10)
 
@@ -499,8 +522,7 @@ c
 c     ************
  
       logical          prjctd,cnstnd,boxed,updatd,wrk
-      character*3      word
-      integer          i,k,nintol,itfile,iback,nskip,
+      integer          i,k,nintol,iback,nskip,
      +                 head,col,iter,itail,iupdat,
      +                 nseg,nfgv,info,ifun,
      +                 iword,nfree,nact,ileave,nenter
@@ -508,7 +530,7 @@ cj itmp for use in R output
       integer          itmp
       double precision theta,fold,ddot,dr,rr,tol,
      +                 xstep,sbgnrm,ddum,dnorm,dtd,epsmch,
-     +                 cpu1,cpu2,cachyt,sbtime,lnscht,time1,time2,
+     +                 cpu1,cpu2,sbtime,lnscht,time1,time2,
      +                 gd,gdold,stp,stpmx,time
       double precision one,zero
       parameter        (one=1.0d0,zero=0.0d0)
@@ -557,17 +579,16 @@ c           for stopping tolerance:
          tol = factr*epsmch
 
 c           for measuring running time:
-         cachyt = 0
          sbtime = 0
          lnscht = 0
  
 c           'word' records the status of subspace solutions.
-         word = '---'
+c$$$         word = '---'
 
 c           'info' records the termination information.
          info = 0
 
-         itfile = 8
+cw         itfile = 8
 cw  leave itfile to avoid messing up subroutines
 cw         if (iprint .ge. 1) then
 c                                open a summary file 'iterate.dat'
@@ -579,14 +600,11 @@ c        Check the input arguments for errors.
          call errclb(n,m,factr,l,u,nbd,itask,info,k)
 c  ERROR return
          if ((itask .ge. 9) .and. (itask .le. 19)) then
-            call prn3lb(n,x,f,itask,iprint,info,itfile,
-     +                  iter,nfgv,nintol,nskip,nact,sbgnrm,
-     +                  zero,nseg,word,iback,stp,xstep,k,
-     +                  cachyt,sbtime,lnscht)
+            call prn3lb(n,x,f,itask,iprint,info,k)
             return
          endif
 
-         call prn1lb(n,m,l,u,x,iprint,itfile,epsmch)
+         call prn1lb(n,m,l,u,x,iprint,epsmch)
  
 c        Initialize iwhere & project x onto the feasible set.
  
@@ -603,7 +621,7 @@ c          restore local variables.
          updatd = lsave(4)
 
          nintol = isave(1)
-         itfile = isave(3)
+c$$$         itfile = isave(3)
          iback  = isave(4)
          nskip  = isave(5)
          head   = isave(6)
@@ -627,7 +645,6 @@ c          restore local variables.
          dnorm  = dsave(4)
          epsmch = dsave(5)
          cpu1   = dsave(6)
-         cachyt = dsave(7)
          sbtime = dsave(8)
          lnscht = dsave(9)
          time1  = dsave(10)
@@ -739,12 +756,10 @@ cw     +'   refresh the lbfgs memory and restart the iteration.')
          updatd = .false.
 cj       call timer(cpu2) 
          cpu2 = 0.0d0
-         cachyt = cachyt + cpu2 - cpu1
          goto 222
       endif
 cj      call timer(cpu2) 
       cpu2 = 0.0d0
-      cachyt = cachyt + cpu2 - cpu1
       nintol = nintol + nseg
 
 c     Count the entering and leaving variables for iter > 0; 
@@ -918,8 +933,8 @@ c        Compute the infinity norm of the projected (-)gradient.
  
 c        Print iteration information.
 
-         call prn2lb(n,x,f,g,iprint,itfile,iter,nfgv,nact,
-     +               sbgnrm,nseg,word,iword,iback,stp,xstep)
+         call prn2lb(f,iprint,iter,
+     +               sbgnrm,iback,xstep)
          goto 1000
       endif
  777  continue
@@ -1029,10 +1044,7 @@ c -------------------- the end of the loop -----------------------------
 cj    call timer(time2)
       time2 = 0.0d0
       time = time2 - time1
-      call prn3lb(n,x,f,itask,iprint,info,itfile,
-     +            iter,nfgv,nintol,nskip,nact,sbgnrm,
-     +            time,nseg,word,iback,stp,xstep,k,
-     +            cachyt,sbtime,lnscht)
+      call prn3lb(n,x,f,itask,iprint,info,k)
  1000 continue
 
 c     Save local variables.
@@ -1043,7 +1055,7 @@ c     Save local variables.
       lsave(4)  = updatd
 
       isave(1)  = nintol 
-      isave(3)  = itfile 
+c$$$      isave(3)  = itfile 
       isave(4)  = iback 
       isave(5)  = nskip 
       isave(6)  = head 
@@ -1067,7 +1079,6 @@ c     Save local variables.
       dsave(4)  = dnorm 
       dsave(5)  = epsmch 
       dsave(6)  = cpu1 
-      dsave(7)  = cachyt 
       dsave(8)  = sbtime 
       dsave(9)  = lnscht 
       dsave(10) = time1 
@@ -1079,10 +1090,10 @@ c     Save local variables.
       dsave(16) = dtd  
 
 cw 1001 format (//,'ITERATION ',i5)
- 1002 format
-     +  (/,'At iterate',i5,4x,'f= ',1p,d12.5,4x,'|proj g|= ',1p,d12.5)
- 1003 format (2(1x,i4),5x,'-',5x,'-',3x,'-',5x,'-',5x,'-',8x,'-',3x,
-     +        1p,2(1x,d10.3))
+cw 1002 format
+cw     +  (/,'At iterate',i5,4x,'f= ',1p,d12.5,4x,'|proj g|= ',1p,d12.5)
+cw 1003 format (2(1x,i4),5x,'-',5x,'-',3x,'-',5x,'-',5x,'-',8x,'-',3x,
+cw     +        1p,2(1x,d10.3))
 cw 1004 format ('  ys=',1p,e10.3,'  -gs=',1p,e10.3,' BFGS update SKIPPED')
 cw 1005 format (/, 
 cw     +' Singular triangular system detected;',/,
@@ -1846,7 +1857,7 @@ cw       write (6,2010)
          call intpr('--- exit CAUCHY---',-1, 0,0)
       endif
 cw 1010 format ('Cauchy X =  ',/,(4x,1p,6(1x,d11.4)))
- 2010 format (/,'---------------- exit CAUCHY----------------------',/)
+cw 2010 format (/,'---------------- exit CAUCHY----------------------',/)
 cw 3010 format (/,'---------------- CAUCHY entered-------------------')
 cw 4010 format ('Piece    ',i3,' --f1, f2 at start point ',1p,2(1x,d11.4))
 cw 4011 format (/,'Piece    ',i3,' --f1, f2 at start point ',
@@ -1954,8 +1965,8 @@ c
 c     ************
 
       integer          i
-      double precision one,zero
-      parameter        (one=1.0d0,zero=0.0d0)
+      double precision zero
+      parameter        (zero=0.0d0)
 
 c     Check the input arguments for errors.
 
@@ -2139,8 +2150,8 @@ c     ************
       integer          m2,ipntr,jpntr,iy,is,jy,js,is1,js1,k1,i,k,
      +                 col2,pbegin,pend,dbegin,dend,upcl
       double precision ddot,temp1,temp2,temp3,temp4
-      double precision one,zero
-      parameter        (one=1.0d0,zero=0.0d0)
+      double precision zero
+      parameter        (zero=0.0d0)
 
 c     Form the lower triangular part of
 c               WN1 = [Y' ZZ'Y   L_a'+R_z'] 
@@ -2851,9 +2862,9 @@ c                                             and the last column of SS:
 
 c======================= The end of matupd =============================
 
-      subroutine prn1lb(n, m, l, u, x, iprint, itfile, epsmch)
+      subroutine prn1lb(n, m, l, u, x, iprint,  epsmch)
  
-      integer n, m, iprint, itfile
+      integer n, m
       double precision epsmch, x(n), l(n), u(n)
 
 c     ************
@@ -2877,7 +2888,7 @@ c
 c
 c     ************
 
-      integer i
+c$$$      integer i
       integer nprt
 
 c  limit output to 1st 5 elements
@@ -2933,13 +2944,11 @@ cw     +        2x,'stepl',4x,'tstep',5x,'projg',8x,'f')
 
 c======================= The end of prn1lb =============================
 
-      subroutine prn2lb(n, x, f, g, iprint, itfile, iter, nfgv, nact, 
-     +                  sbgnrm, nseg, word, iword, iback, stp, xstep)
+      subroutine prn2lb(f, iprint, iter, 
+     +                  sbgnrm, iback, xstep)
  
-      character*3      word
-      integer          n, iprint, itfile, iter, nfgv, nact, nseg,
-     +                 iword, iback
-      double precision f, sbgnrm, stp, xstep, x(n), g(n)
+      integer iprint, iter, iback
+      double precision f, sbgnrm, xstep
 
 c     ************
 c
@@ -2961,21 +2970,21 @@ c
 c
 c     ************
 
-      integer i,imod
+      integer imod
 
 c           'word' records the status of subspace solutions.
-      if (iword .eq. 0) then
-c                            the subspace minimization converged.
-         word = 'con'
-      else if (iword .eq. 1) then
-c                          the subspace minimization stopped at a bound.
-         word = 'bnd'
-      else if (iword .eq. 5) then
-c                             the truncated Newton step has been used.
-         word = 'TNT'
-      else
-         word = '---'
-      endif
+c$$$      if (iword .eq. 0) then
+c$$$c                            the subspace minimization converged.
+c$$$         word = 'con'
+c$$$      else if (iword .eq. 1) then
+c$$$c                          the subspace minimization stopped at a bound.
+c$$$         word = 'bnd'
+c$$$      else if (iword .eq. 5) then
+c$$$c                             the truncated Newton step has been used.
+c$$$         word = 'TNT'
+c$$$      else
+c$$$         word = '---'
+c$$$      endif
       if (iprint .ge. 99) then
 cw         write (6,*) 'LINE SEARCH',iback,' times; norm of step = ',xstep
          call intpr('LINE SEARCH iback=',-1, iback, 1)
@@ -3006,17 +3015,11 @@ cw 3001 format(2(1x,i4),2(1x,i5),2x,a3,1x,i4,1p,2(2x,d7.1),1p,2(1x,d10.3))
 
 c======================= The end of prn2lb =============================
 
-      subroutine prn3lb(n, x, f, itask, iprint, info, itfile, 
-     +                  iter, nfgv, nintol, nskip, nact, sbgnrm, 
-     +                  time, nseg, word, iback, stp, xstep, k, 
-     +                  cachyt, sbtime, lnscht)
+      subroutine prn3lb(n, x, f, itask, iprint, info, k)
  
 c      character*255     task
-      character*3      word
-      integer          n, iprint, info, itfile, iter, nfgv, nintol,
-     +                 nskip, nact, nseg, iback, k, itask
-      double precision f, sbgnrm, time, stp, xstep, cachyt, sbtime,
-     +                 lnscht, x(n)
+      integer          n, iprint, info,  k, itask
+      double precision f, x(n)
 
 c     ************
 c
@@ -3039,7 +3042,7 @@ c
 c
 c     ************
 
-      integer i
+c$$$      integer i
       integer nprt
 
 c      if (task(1:5) .eq. 'ERROR') goto 999
@@ -3158,7 +3161,7 @@ cw            if (info .eq. -9) write (6,9019)
             endif
          endif
 cw         if (iprint .ge. 1) 
-cw        write (6,3007) cachyt,sbtime,lnscht
+cw        write (6,3007) sbtime,lnscht
 cw   suppressing time output            
 
 cw         write (6,3008) time
@@ -3256,8 +3259,8 @@ c     ************
 
       integer i
       double precision gi
-      double precision one,zero
-      parameter        (one=1.0d0,zero=0.0d0)
+      double precision zero
+      parameter        (zero=0.0d0)
 
       sbgnrm = zero
       do 15 i = 1, n
@@ -3539,18 +3542,20 @@ c
 c
             if ( nbd(k).eq.1 ) then          ! lower bounds only
                x(k) = max( l(k), xk + dk )
-               if ( x(k).eq.l(k) ) iword = 1
+               if (x(k) .eq. l(k)) iword = 1
             else 
 c     
                if ( nbd(k).eq.2 ) then       ! upper and lower bounds
                   xk   = max( l(k), xk + dk ) 
                   x(k) = min( u(k), xk )
-                  if ( x(k).eq.l(k) .or. x(k).eq.u(k) ) iword = 1
+                  if (x(k) .eq. l(k) .or. x(k) .eq. u(k)) then
+                     iword = 1
+                  endif
                else
 c
                   if ( nbd(k).eq.3 ) then    ! upper bounds only
                      x(k) = min( u(k), xk + dk )
-                     if ( x(k).eq.u(k) ) iword = 1
+                     if ( x(k) .eq. u(k)) iword = 1
                   end if 
                end if
             end if
@@ -4176,7 +4181,7 @@ c        to infinity in the direction of the step.
          p = (gamma - dp) + theta
          q = (gamma + (dx - dp)) + gamma
          r = p/q
-         if (r .lt. zero .and. gamma .ne. zero) then
+         if (r .lt. zero .and. abs(gamma-zero) > 1D-5) then
             stpc = stp + r*(stx - stp)
          else if (stp .gt. stx) then
             stpc = stpmax

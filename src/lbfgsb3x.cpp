@@ -1,9 +1,9 @@
-//
 #include <stdio.h>
 #include <stdlib.h>
 #include <time.h>
 #include <Rmath.h>
 #include <Rcpp.h>
+#include <R_ext/Linpack.h>
 #define max2( a , b )  ( (a) > (b) ? (a) : (b) )
 
 using namespace Rcpp;
@@ -16,6 +16,8 @@ extern "C" void setulb_(int *n, int *m, double *x, double *l, double *u,
 typedef double optimfn(int n, double *par, void *ex);
 
 typedef void optimgr(int n, double *par, double *gr, void *ex);
+
+List lbfgsb3Cinfo;
 
 extern "C" void lbfgsb3C_(int n, int lmm, double *x, double *lower,
 			  double *upper, int *nbd, double *Fmin, optimfn fn,
@@ -149,6 +151,20 @@ extern "C" void lbfgsb3C_(int n, int lmm, double *x, double *lower,
   if (itask2){
     itask=itask2;
   }
+  LogicalVector lsaveR(4);
+  NumericVector dsaveR(29);
+  IntegerVector isaveR(44);
+  std::copy(&lsave[0],&lsave[0]+4, &lsaveR[0]);
+  std::copy(&dsave[0],&dsave[0]+29, dsaveR.begin());
+  std::copy(&isave[0],&isave[0]+44, isaveR.begin());;
+  CharacterVector taskR(1);
+  taskR[0] = taskList[itask-1];
+  lbfgsb3Cinfo = List::create(_["task"] = taskR,
+			      _["itask"]= IntegerVector::create(itask),
+			      _["lsave"]= lsaveR,
+			      _["icsave"]= IntegerVector::create(icsave),
+			      _["dsave"]= dsaveR,
+			      _["isave"] = isaveR);
   // info <- list(task = task, itask = itask, lsave = lsave,
   //      icsave = icsave, dsave = dsave, isave = isave)
   fail[0]= itask;
@@ -189,15 +205,34 @@ Rcpp::List lbfgsb3cpp(NumericVector par, Function fn, Function gr, NumericVector
   ev["pn"] = par.attr("names");
   Rcpp::NumericVector g(par.size());
     // CONV in 6, 7, 8; ERROR in 9-19; WARN in 23-26
-  int trace = as<int>(ctrl["trace"]);
-  double factr = as<double>(ctrl["factr"]);
-  double pgtol = as<double>(ctrl["pgtol"]);
-  double atol = as<double>(ctrl["abstol"]);
-  double rtol = as<double>(ctrl["reltol"]);
-  int lmm = as<int>(ctrl["lmm"]);
+  IntegerVector traceI = as<IntegerVector>(ctrl["trace"]);
+  if (traceI.size() != 1) stop("trace has to have one element in it.");
+  int trace = traceI[0];
+  NumericVector factrN = as<NumericVector>(ctrl["factr"]);
+  if (factrN.size() != 1) stop("factr has to have one element in it.");
+  double factr = factrN[0];
+  NumericVector pgtolN = as<NumericVector>(ctrl["pgtol"]);
+  if (pgtolN.size() != 1) stop("pgtol has to have one element in it.");
+  double pgtol = pgtolN[0];
+  NumericVector atolN = as<NumericVector>(ctrl["abstol"]);
+  if (atolN.size() != 1) stop("abstol has to have one element in it.");
+  double atol = atolN[0];
+  NumericVector rtolN = as<NumericVector>(ctrl["reltol"]);
+  if (atolN.size() != 1) stop("reltol has to have one element in it.");
+  double rtol = rtolN[0];
+  LogicalVector infoN = as<LogicalVector>(ctrl["info"]);
+  if (infoN.size() != 1) stop("info has to have one element in it.");
+  bool addInfo = infoN[0];
+  IntegerVector lmmN = as<IntegerVector>(ctrl["lmm"]);
+  if (lmmN.size() != 1) stop("lmm has to have one element in it.");
+  int lmm = lmmN.size();
   int n = par.size();
-  int maxit = as<int>(ctrl["maxit"]);
-  int iprint=as<int>(ctrl["iprint"]);
+  IntegerVector maxitN = as<IntegerVector>(ctrl["maxit"]);
+  if (maxitN.size() != 1) stop("maxit has to have one element in it.");
+  int maxit = maxitN[0];
+  IntegerVector iprintN = as<IntegerVector>(ctrl["iprint"]);
+  if (iprintN.size() != 1) stop("iprint has to have one element in it.");
+  int iprint = iprintN[0];
   // double *g = new double[par.size()];
   double *low = new double[par.size()];
   if (lower.size() == 1){
@@ -312,6 +347,7 @@ Rcpp::List lbfgsb3cpp(NumericVector par, Function fn, Function gr, NumericVector
   taskList[27] = "Maximum number of iterations reached";      
 
   ret["message"]= CharacterVector::create(taskList[fail-1]);
+  if (addInfo) ret["info"] = lbfgsb3Cinfo;
   delete [] x;
   delete [] low;
   delete [] up;

@@ -2,9 +2,21 @@
 % Please edit documentation in R/lbfgsb3.R
 \name{lbfgsb3c}
 \alias{lbfgsb3c}
+\alias{lbfgsb3}
+\alias{lbfgsb3f}
+\alias{lbfgsb3x}
 \title{Interfacing wrapper for the Nocedal - Morales LBFGSB3 (Fortran) limited memory BFGS solver.}
 \usage{
 lbfgsb3c(par, fn, gr = NULL, lower = -Inf, upper = Inf,
+  control = list(), ..., rho = NULL)
+
+lbfgsb3(par, fn, gr = NULL, lower = -Inf, upper = Inf,
+  control = list(), ..., rho = NULL)
+
+lbfgsb3f(par, fn, gr = NULL, lower = -Inf, upper = Inf,
+  control = list(), ..., rho = NULL)
+
+lbfgsb3x(par, fn, gr = NULL, lower = -Inf, upper = Inf,
   control = list(), ..., rho = NULL)
 }
 \arguments{
@@ -64,6 +76,7 @@ The control list can contain:
 \item{lmm} is an integer giving the number of BFGS updates retained in the "L-BFGS-B" method, It defaults to 5.
 \item{maxit} maximum number of iterations.
 \item{iprint} If positive, tracing information on the progress of the optimization is produced. Higher values may produce more tracing information: for method "L-BFGS-B" there are six levels of tracing. (To understand exactly what these do see the source code: higher levels give more detail.)
+\item{info} a boolean to indicate if more optimization information is captured and output in a $info list
 }
 }
 \note{
@@ -122,7 +135,10 @@ grr = function(x)
     g
 }
 x = c(a=1.02, b=1.02, c=1.02)
-(op1 <- lbfgsb3c(x,fr, grr, x))
+(opc <- lbfgsb3c(x,fr, grr))
+(op <- lbfgsb3(x,fr, grr, control=list(trace=1)))
+(opx <- lbfgsb3x(x,fr, grr))
+(opf <- lbfgsb3f(x,fr, grr))
 }
 \references{
 Morales, J. L.; Nocedal, J. (2011). "Remark on 'algorithm 778: L-BFGS-B:

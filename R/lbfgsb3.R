@@ -43,6 +43,7 @@
 ##' \item{lmm} is an integer giving the number of BFGS updates retained in the "L-BFGS-B" method, It defaults to 5.
 ##' \item{maxit} maximum number of iterations.
 ##' \item{iprint} If positive, tracing information on the progress of the optimization is produced. Higher values may produce more tracing information: for method "L-BFGS-B" there are six levels of tracing. (To understand exactly what these do see the source code: higher levels give more detail.)
+##' \item{info} a boolean to indicate if more optimization information is captured and output in a $info list
 ##' }
 ##'
 ##' @return
@@ -126,7 +127,10 @@
 ##'     g
 ##' }
 ##' x = c(a=1.02, b=1.02, c=1.02)
-##' (op1 <- lbfgsb3c(x,fr, grr, x))
+##' (opc <- lbfgsb3c(x,fr, grr))
+##' (op <- lbfgsb3(x,fr, grr, control=list(trace=1)))
+##' (opx <- lbfgsb3x(x,fr, grr))
+##' (opf <- lbfgsb3f(x,fr, grr))
 ##' @export
 lbfgsb3c <- function(par, fn, gr=NULL, lower = -Inf, upper = Inf,
                      control=list(), ..., rho=NULL){
@@ -138,7 +142,15 @@ lbfgsb3c <- function(par, fn, gr=NULL, lower = -Inf, upper = Inf,
                  factr=1e7,
                  pgtol=0,
                  reltol=0,
-                 abstol=0);
+                 abstol=0,
+                 info=FALSE);
+    callstak <- sys.calls() # get the call stack
+    lcs <- length(callstak)
+    fstr <- as.character(callstak[lcs])
+    fstr <- strsplit(fstr, "(", fixed=TRUE)[[1]][1]
+    if (ctrl$trace > 0) { cat("Using function ",fstr,"\n") }
+    if ( (fstr == "lbfgsb3") || (fstr == "lbfgsb3f") ) { ctrl$info <- TRUE }
+    # This emits more information from lbfgsb3 Fortran code.
     namc <- names(control)
     if (!all(namc %in% names(ctrl)))
         stop("unknown names in control: ", namc[!(namc %in% names(ctrl))])
@@ -152,6 +164,7 @@ lbfgsb3c <- function(par, fn, gr=NULL, lower = -Inf, upper = Inf,
         }
     }
     if (is(fn, "function") & is (gr, "function")){
+##        cat("USING fnR, grR\n")
         fnR <- function(x, rho){
             do.call(fn, c(list(x), as.list(rho)));
         }
@@ -163,3 +176,15 @@ lbfgsb3c <- function(par, fn, gr=NULL, lower = -Inf, upper = Inf,
         return(lbfgsb3cpp(par, fn, gr, lower, upper, ctrl, rho));
     }
 } # end of lbfgsb3()
+
+##'@rdname lbfgsb3c
+##'@export
+lbfgsb3 <- lbfgsb3c
+
+##'@rdname lbfgsb3c
+##'@export
+lbfgsb3f <- lbfgsb3c
+
+##'@rdname lbfgsb3c
+##'@export
+lbfgsb3x <- lbfgsb3c
