@@ -1,5 +1,9 @@
-[![Travis-CI Build Status](https://travis-ci.org/nlmixrdevelopment/lbfgsb3c.svg?branch=master)](https://travis-ci.org/nlmixrdevelopment/lbfgsb3c)
-[![AppVeyor Build Status](https://ci.appveyor.com/api/projects/status/github/nlmixrdevelopment/lbfgsb3c?branch=master&svg=true)](https://ci.appveyor.com/project/nlmixrdevelopment/lbfgsb3c)
+<!-- badges: start -->
+[![R-CMD-check](https://github.com/nlmixr2/lbfgsb3c/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/nlmixr2/lbfgsb3c/actions/workflows/R-CMD-check.yaml)
+[![CRAN total downloads](https://cranlogs.r-pkg.org/badges/grand-total/lbfgsb3c)](https://cran.r-project.org/package=lbfgsb3c)
+[![CRAN total downloads](https://cranlogs.r-pkg.org/badges/lbfgsb3c)](https://cran.r-project.org/package=lbfgsb3c)
+[![Codecov test coverage](https://codecov.io/gh/nlmixr2/lbfgsb3c/branch/main/graph/badge.svg)](https://app.codecov.io/gh/nlmixr2/lbfgsb3c?branch=main)
+<!-- badges: end -->
 
 # libfgsb3c interface from C
 This is the fork of the libfgsb3 from cran with the following differences:

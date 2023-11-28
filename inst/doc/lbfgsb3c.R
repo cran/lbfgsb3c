@@ -3,7 +3,7 @@ knitr::opts_chunk$set(echo = TRUE)
 ## Added 20190717 to get vignette to build
 pkgbuild::compile_dll()
 
-## ---- candlestick-------------------------------------------------------------
+## ----candlestick--------------------------------------------------------------
 # candlestick function
 # J C Nash 2011-2-3
 cstick.f<-function(x,alpha=100){
@@ -120,7 +120,7 @@ for (n in seq(2,12, by=2)) {
 ##    print(summary(erfg, par.select=1:2, order=value))
 }
 
-## ---- usingFortran, eval=FALSE------------------------------------------------
+## ----usingFortran, eval=FALSE-------------------------------------------------
 #  system("R CMD SHLIB jrosen.f")
 #  dyn.load("jrosen.so")
 #  is.loaded("rosen")

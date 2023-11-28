@@ -1,3 +1,17 @@
+# lbfgsb3c 2020-3.3 changes
+
+* Now allow `rho=NULL` to work the same as if `rho` was not supplied
+
+* Be More careful about `$convergence` by adding a default value of `NA_INTEGER`
+
+* `$convergence` is now an integer instead of a real number
+
+* Fix too many arguments for format as requested by CRAN
+
+* Added a `NEWS.md` file to track changes to the package.
+
+# lbfgsb3c 2020-3.2 prior changes and information
+
 To do
 
 Add test using a plain C function for optimization. lbfgsb3c is
@@ -13,4 +27,3 @@ supposed to handle this.
       integer itask in errclb subroutine. Thanks to Berend Hasselman.
 
 New package lbfgsb3 2014.7.31
-

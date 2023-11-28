@@ -24,7 +24,7 @@ extern "C" void lbfgsb3C_(int n, int lmm, double *x, double *lower,
 			  optimgr gr, int *fail, void *ex, double factr,
 			  double pgtol, int *fncount, int *grcount,
 			  int maxit, char *msg, int trace, int iprint,
-			  double atol, double rtol, double *g){
+			  double atol, double rtol, double *g) {
   // Optim compatible interface
   int itask= 2;
   // *Fmin=;
@@ -136,7 +136,7 @@ extern "C" void lbfgsb3C_(int n, int lmm, double *x, double *lower,
       	  itask2=27;
       	  itask=3; // Stop -- gives the right results and restores gradients
 	  if (trace > 2){
-	    Rprintf("CONVERGENCE: Parameters differences below xtol.\n", maxit);
+	    Rprintf("CONVERGENCE: Parameters differences below xtol.\n");
 	  }
 	  doExit=1;
       	}
@@ -263,7 +263,7 @@ Rcpp::List lbfgsb3cpp(NumericVector par, Function fn, Function gr, NumericVector
 		  1 if x(i) has only a lower bound,
 		  2 if x(i) has both lower and upper bounds,
 		  3 if x(i) has only an upper bound.
-    */    
+    */
     nbd[i] = 0;
     if (R_FINITE(low[i])) nbd[i] = 1;
     if (R_FINITE(up[i]))  nbd[i] = 3 - nbd[i];
@@ -291,16 +291,16 @@ Rcpp::List lbfgsb3cpp(NumericVector par, Function fn, Function gr, NumericVector
   case 7:
   case 8:
   case 27:
-    ret["convergence"]=0;
+    ret["convergence"]=IntegerVector::create(0);
     break;
   case 28:
-    ret["convergence"]=1;
+    ret["convergence"]=IntegerVector::create(1);
     break;
   case 23:
   case 24:
   case 25:
   case 26:
-    ret["convergence"] = 51;
+    ret["convergence"] = IntegerVector::create(51);
     break;
   case 9:
   case 10:
@@ -313,8 +313,10 @@ Rcpp::List lbfgsb3cpp(NumericVector par, Function fn, Function gr, NumericVector
   case 17:
   case 18:
   case 19:
-    ret["convergence"] = 52;
+    ret["convergence"] = IntegerVector::create(52);
     break;
+  default:
+    ret["convergence"] = IntegerVector::create(NA_INTEGER);
   }
   CharacterVector taskList(28);
   taskList[0]="NEW_X";
@@ -344,7 +346,7 @@ Rcpp::List lbfgsb3cpp(NumericVector par, Function fn, Function gr, NumericVector
   taskList[24]="WARNING: STP .eq. STPMIN"; // 25
   taskList[25]="WARNING: XTOL TEST SATISFIED"; //
   taskList[26] = "CONVERGENCE: Parameters differences below xtol";
-  taskList[27] = "Maximum number of iterations reached";      
+  taskList[27] = "Maximum number of iterations reached";
 
   ret["message"]= CharacterVector::create(taskList[fail-1]);
   if (addInfo) ret["info"] = lbfgsb3Cinfo;
