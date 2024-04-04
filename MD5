@@ -1,4 +1,4 @@
-c1afcef384f11a3e4d241eb97315b48b *DESCRIPTION
+90be3c39c809517fb2b1b51c02831420 *DESCRIPTION
 1c2cf83d1cca978b12580515ab85b339 *LICENSE.note
 b20fdc1819c0d30c2316bf678f98235d *NAMESPACE
 7caed7e62401082c0401de793aab7b5e *NEWS.md
@@ -7,7 +7,7 @@ b20fdc1819c0d30c2316bf678f98235d *NAMESPACE
 c36fc55ebd544bf06e7e0d8512f10a4b *README.md
 23b426a77758875aac8af9b7a16a4ec4 *build/vignette.rds
 5d94ea6a65871b83d8e2c31f18ba3c46 *inst/License-lbfgsb-orig.txt
-58e21f0499281c0e25330f68526233b2 *inst/doc/lbfgsb3c.R
+99087982354202068e89de9c73db36e9 *inst/doc/lbfgsb3c.R
 6cee2bdfd76290f50baab93f46c48cd3 *inst/doc/lbfgsb3c.Rmd
 930114f6cbf9cc6c33971fe8b29afacb *inst/doc/lbfgsb3c.html
 47bd40af787b00f36feb0ca97d64b366 *inst/drlbfgsb3.R
@@ -18,7 +18,7 @@ a61fd32ec1282b1c7a87fb17379ab150 *man/lbfgsb3c.Rd
 d6f104f69a5fd559c95aaf1b62509c77 *src/RcppExports.cpp
 c1cbc852cb905e68febf95c151fb994d *src/blas.f
 6d12f656af0ffce27c28f1ca821c055a *src/init.c
-87c738352daf4ec975a64599504b5e1b *src/lbfgsb.f
+6a48858dc47482ab34e4f722860c7e8f *src/lbfgsb.f
 bb2f798a0355fc6ae7c7e939059ae28a *src/lbfgsb3x.cpp
 3fc355272a3ea35f446ddf790c594653 *src/timer.f
 47cc908b06c701ac1fa594bfb9ecc9da *tests/testthat.R
