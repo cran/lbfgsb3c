@@ -1,3 +1,11 @@
+# Version: 2024-3.5 changes
+
+* Added function pointer interface (instead of only low level abi interface)
+
+# lbfgsb3c 2024-3.4 changes
+
+* LTO fixes and remove unused code for Fortran fixes
+
 # lbfgsb3c 2024-3.3 changes
 
 * Fixed `lmm`.  In prior version with the R interface `lmm` was not
