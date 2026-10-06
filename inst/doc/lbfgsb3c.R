@@ -1,7 +1,5 @@
 ## ----setup, include=FALSE-----------------------------------------------------
 knitr::opts_chunk$set(echo = TRUE)
-## Added 20190717 to get vignette to build
-pkgbuild::compile_dll()
 
 ## ----candlestick--------------------------------------------------------------
 # candlestick function
@@ -121,56 +119,56 @@ for (n in seq(2,12, by=2)) {
 }
 
 ## ----usingFortran, eval=FALSE-------------------------------------------------
-#  system("R CMD SHLIB jrosen.f")
-#  dyn.load("jrosen.so")
-#  is.loaded("rosen")
-#  x0 <- as.double(c(-1.2,1))
-#  fv <- as.double(-999)
-#  n <- as.double(2)
-#  testf <- .Fortran("rosen", n=as.integer(n), x=as.double(x0), fval=as.double(fv))
-#  testf
-#  
-#  rrosen <- function(x) {
-#    fval <- 0.0
-#    for (i in 1:(n-1)) {
-#      dx <- x[i + 1] - x[i] * x[i]
-#      fval <- fval + 100.0 * dx * dx
-#      dx <- 1.0 - x[i]
-#      fval <- fval + dx * dx
-#    }
-#    fval
-#  }
-#  
-#  (rrosen(x0))
-#  
-#  frosen <- function(x){
-#    nn <- length(x)
-#    if (nn > 100) { stop("max number of parameters is 100")}
-#    fv <- -999.0
-#    val <- .Fortran("rosen", n=as.integer(nn), x=as.double(x), fval=as.double(fv))
-#    val$fval # NOTE--need ONLY function value returned
-#  }
-#  # Test the funcion
-#  tval <- frosen(x0)
-#  str(tval)
-#  
-#  cat("Run with Nelder-Mead using R function\n")
-#  mynm <- optim(x0, rrosen, control=list(trace=0))
-#  print(mynm)
-#  cat("\n\n Run with Nelder-Mead using Fortran function")
-#  mynmf <- optim(x0, frosen, control=list(trace=0))
-#  print(mynmf)
-#  
-#  
-#  library(lbfgsb3c)
-#  library(microbenchmark)
-#  cat("try lbfgsb3c, no Gradient \n")
-#  cat("R function\n")
-#  tlR<-microbenchmark(myopR <- lbfgsb3c(x0, rrosen, gr=NULL, control=list(trace=0)))
-#  print(tlR)
-#  print(myopR)
-#  cat("Fortran function\n")
-#  tlF<-microbenchmark(myop <- lbfgsb3c(x0, frosen, gr=NULL, control=list(trace=0)))
-#  print(tlF)
-#  print(myop)
+# system("R CMD SHLIB jrosen.f")
+# dyn.load("jrosen.so")
+# is.loaded("rosen")
+# x0 <- as.double(c(-1.2,1))
+# fv <- as.double(-999)
+# n <- as.double(2)
+# testf <- .Fortran("rosen", n=as.integer(n), x=as.double(x0), fval=as.double(fv))
+# testf
+# 
+# rrosen <- function(x) {
+#   fval <- 0.0
+#   for (i in 1:(n-1)) {
+#     dx <- x[i + 1] - x[i] * x[i]
+#     fval <- fval + 100.0 * dx * dx
+#     dx <- 1.0 - x[i]
+#     fval <- fval + dx * dx
+#   }
+#   fval
+# }
+# 
+# (rrosen(x0))
+# 
+# frosen <- function(x){
+#   nn <- length(x)
+#   if (nn > 100) { stop("max number of parameters is 100")}
+#   fv <- -999.0
+#   val <- .Fortran("rosen", n=as.integer(nn), x=as.double(x), fval=as.double(fv))
+#   val$fval # NOTE--need ONLY function value returned
+# }
+# # Test the funcion
+# tval <- frosen(x0)
+# str(tval)
+# 
+# cat("Run with Nelder-Mead using R function\n")
+# mynm <- optim(x0, rrosen, control=list(trace=0))
+# print(mynm)
+# cat("\n\n Run with Nelder-Mead using Fortran function")
+# mynmf <- optim(x0, frosen, control=list(trace=0))
+# print(mynmf)
+# 
+# 
+# library(lbfgsb3c)
+# library(microbenchmark)
+# cat("try lbfgsb3c, no Gradient \n")
+# cat("R function\n")
+# tlR<-microbenchmark(myopR <- lbfgsb3c(x0, rrosen, gr=NULL, control=list(trace=0)))
+# print(tlR)
+# print(myopR)
+# cat("Fortran function\n")
+# tlF<-microbenchmark(myop <- lbfgsb3c(x0, frosen, gr=NULL, control=list(trace=0)))
+# print(tlF)
+# print(myop)
 
